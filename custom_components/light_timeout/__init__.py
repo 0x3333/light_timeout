@@ -3,10 +3,9 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import STATE_ON
-from homeassistant.helpers.condition import async_and_from_config
 from homeassistant.helpers.event import async_track_state_change_event, async_call_later
 
-from .const import DOMAIN, CONF_CONDITION, CONF_LIGHTS, CONF_TIMEOUT
+from .const import DOMAIN, CONF_LIGHTS, CONF_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,9 +70,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         - If new state is ON: schedule/renew timeout.
         - If old state was ON and new state is OFF: cancel timeout.
         """
-        condition = entry.options.get(CONF_CONDITION)
-        _LOGGER.debug("Condition for %s: %s", entry.entry_id, condition)
-
         entity_id = event.data.get("entity_id")
         old_state = event.data.get("old_state")
         new_state = event.data.get("new_state")
@@ -81,20 +77,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return
 
         if new_state.state == STATE_ON:
-            ok = (
-                (await async_and_from_config(hass, condition))(hass)
-                if condition
-                else True
-            )
-            if not ok:
-                _LOGGER.debug(
-                    "Condition %s not met for %s — skipping timeout",
-                    condition,
-                    entity_id,
-                )
-            else:
-                _LOGGER.debug("Light %s turned ON → scheduling timeout", entity_id)
-                _schedule_timeout(entity_id)
+            _LOGGER.debug("Light %s turned ON → scheduling timeout", entity_id)
+            _schedule_timeout(entity_id)
         else:
             if old_state is not None and old_state.state == STATE_ON:
                 _LOGGER.debug("Light %s turned OFF → canceling timeout", entity_id)
@@ -108,11 +92,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     timeout_seconds = entry.options.get(CONF_TIMEOUT)
     _LOGGER.debug(
-        "Light Timeout: entry %s configured for %s with timeout %s and condition %s",
+        "Light Timeout: entry %s configured for %s with timeout %s",
         entry.entry_id,
         lights,
         timeout_seconds,
-        entry.options.get(CONF_CONDITION)
     )
     return True
 

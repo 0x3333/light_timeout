@@ -12,7 +12,6 @@ A Home Assistant custom component that automatically turns off configured lights
 - Cancels the timer if the light is manually turned off
 - Renews the timer if the light’s state is modified while on
 - Supports multiple lights simultaneously, each with its own timeout
-- Allow creating condition(s) to be evaluated before defining the timer allowing to create a conditional timeout
 
 ![Configuration](.github/screenshot-configuration.png)
 
@@ -45,7 +44,6 @@ After installation and restart:
    - **Name**: a friendly title for this instance (e.g., “Living Room Timeout”).
    - **Lights**: select one or more `light.xxx` entities to monitor.
    - **Timeout**: choose a duration in “HH:MM:SS” format (e.g., “00:10:00” for 10 minutes).
-   - **Condition**: you can add a condition(s) to be met when evaluating if a timeout is necessary or not.
 4. Click **Submit**.
 
 The integration will begin monitoring the selected lights. You can create as many instances (Config Entries) as you like, each with its own set of lights and timeout.

@@ -8,7 +8,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector, config_validation as cv
 from homeassistant.const import CONF_NAME
 
-from .const import DOMAIN, CONF_CONDITION, CONF_LIGHTS, CONF_TIMEOUT
+from .const import DOMAIN, CONF_LIGHTS, CONF_TIMEOUT
 
 
 def _timedelta_to_dict(td: datetime.timedelta) -> dict:
@@ -22,7 +22,6 @@ def _timedelta_to_dict(td: datetime.timedelta) -> dict:
 def _get_schema(
     default_lights=None,
     default_timeout: dict = None,
-    default_condition: dict | None = None,
     with_title: bool = True,
 ):
     """Return the schema for the form (user and options)."""
@@ -42,10 +41,6 @@ def _get_schema(
         vol.Required(CONF_TIMEOUT, default=default_timeout): selector.DurationSelector(
             selector.DurationSelectorConfig(enable_day=False)
         ),
-        vol.Optional(
-            CONF_CONDITION,
-            default=default_condition,
-        ): selector.ConditionSelector(),
     }
 
     if with_title:
@@ -80,7 +75,6 @@ class LightTimeoutConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     options={
                         CONF_LIGHTS: user_input[CONF_LIGHTS],
                         CONF_TIMEOUT: timeout,
-                        CONF_CONDITION: user_input[CONF_CONDITION],
                     },
                 )
 
@@ -117,13 +111,11 @@ class LightTimeoutOptionsFlowHandler(config_entries.OptionsFlow):
                 data={
                     CONF_LIGHTS: user_input[CONF_LIGHTS],
                     CONF_TIMEOUT: timeout,
-                    CONF_CONDITION: user_input[CONF_CONDITION],
                 },
             )
 
         current_lights = self.config_entry.options.get(CONF_LIGHTS)
         current_timeout_secs = self.config_entry.options.get(CONF_TIMEOUT)
-        current_condition = self.config_entry.options.get(CONF_CONDITION)
         current_timeout_td = datetime.timedelta(seconds=current_timeout_secs)
         current_timeout_dict = _timedelta_to_dict(current_timeout_td)
 
@@ -132,7 +124,6 @@ class LightTimeoutOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=_get_schema(
                 default_lights=current_lights,
                 default_timeout=current_timeout_dict,
-                default_condition=current_condition,
                 with_title=False,
             ),
             errors=errors,
