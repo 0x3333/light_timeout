@@ -3,9 +3,10 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import STATE_ON
+from homeassistant.helpers.condition import async_and_from_config
 from homeassistant.helpers.event import async_track_state_change_event, async_call_later
 
-from .const import DOMAIN, CONF_LIGHTS, CONF_TIMEOUT
+from .const import DOMAIN, CONF_CONDITION, CONF_LIGHTS, CONF_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,21 +46,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         async def _on_timeout(now):
             _LOGGER.debug("Timeout expired for %s; turning off...", entity_id)
             await hass.services.async_call(
-                "light",
-                "turn_off",
-                {"entity_id": entity_id},
-                blocking=True
+                "light", "turn_off", {"entity_id": entity_id}, blocking=True
             )
             entry_data["timers"].pop(entity_id, None)
 
         timeout_seconds = entry.options.get(CONF_TIMEOUT)
-        handle = async_call_later(
-            hass,
-            timeout_seconds,
-            _on_timeout
-        )
+        handle = async_call_later(hass, timeout_seconds, _on_timeout)
         entry_data["timers"][entity_id] = handle
-        _LOGGER.debug("Timer scheduled for %s in %s seconds", entity_id, timeout_seconds)
+        _LOGGER.debug(
+            "Timer scheduled for %s in %s seconds", entity_id, timeout_seconds
+        )
 
     def _cancel_timeout(entity_id: str):
         """Cancel the off-timer for a light."""
@@ -75,6 +71,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         - If new state is ON: schedule/renew timeout.
         - If old state was ON and new state is OFF: cancel timeout.
         """
+        condition = entry.options.get(CONF_CONDITION)
+        _LOGGER.debug("Condition for %s: %s", entry.entry_id, condition)
+
         entity_id = event.data.get("entity_id")
         old_state = event.data.get("old_state")
         new_state = event.data.get("new_state")
@@ -82,8 +81,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return
 
         if new_state.state == STATE_ON:
-            _LOGGER.debug("Light %s turned ON → scheduling timeout", entity_id)
-            _schedule_timeout(entity_id)
+            ok = (
+                (await async_and_from_config(hass, condition))(hass)
+                if condition
+                else True
+            )
+            if not ok:
+                _LOGGER.debug(
+                    "Condition %s not met for %s — skipping timeout",
+                    condition,
+                    entity_id,
+                )
+            else:
+                _LOGGER.debug("Light %s turned ON → scheduling timeout", entity_id)
+                _schedule_timeout(entity_id)
         else:
             if old_state is not None and old_state.state == STATE_ON:
                 _LOGGER.debug("Light %s turned OFF → canceling timeout", entity_id)
@@ -91,16 +102,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     for light_entity in lights:
         unsub = async_track_state_change_event(
-            hass,
-            light_entity,
-            _state_change_handler
+            hass, light_entity, _state_change_handler
         )
         entry_data["unsubs"][light_entity] = unsub
 
     timeout_seconds = entry.options.get(CONF_TIMEOUT)
     _LOGGER.debug(
-        "Light Timeout: entry %s configured for %s with timeout %s",
-        entry.entry_id, lights, timeout_seconds
+        "Light Timeout: entry %s configured for %s with timeout %s and condition %s",
+        entry.entry_id,
+        lights,
+        timeout_seconds,
+        entry.options.get(CONF_CONDITION)
     )
     return True
 

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "documentation": "https://github.com/0x3333/light_timeout",
   "requirements": [],
-  "dependencies": [],
+  "dependencies": ["light"],
   "codeowners": ["@0x3333"],
   "config_flow": true,
   "iot_class": "local_push",
@@ -13,4 +13,3 @@
     "category": "integration"
   }
 }
-

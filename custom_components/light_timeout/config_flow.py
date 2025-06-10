@@ -8,7 +8,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector, config_validation as cv
 from homeassistant.const import CONF_NAME
 
-from .const import DOMAIN, CONF_LIGHTS, CONF_TIMEOUT
+from .const import DOMAIN, CONF_CONDITION, CONF_LIGHTS, CONF_TIMEOUT
 
 
 def _timedelta_to_dict(td: datetime.timedelta) -> dict:
@@ -19,7 +19,12 @@ def _timedelta_to_dict(td: datetime.timedelta) -> dict:
     return {"hours": hours, "minutes": minutes, "seconds": seconds}
 
 
-def _get_schema(default_lights=None, default_timeout: dict = None, with_title: bool = True):
+def _get_schema(
+    default_lights=None,
+    default_timeout: dict = None,
+    default_condition: dict | None = None,
+    with_title: bool = True,
+):
     """Return the schema for the form (user and options)."""
     if default_lights is None:
         default_lights = []
@@ -37,9 +42,15 @@ def _get_schema(default_lights=None, default_timeout: dict = None, with_title: b
         vol.Required(CONF_TIMEOUT, default=default_timeout): selector.DurationSelector(
             selector.DurationSelectorConfig(enable_day=False)
         ),
+        vol.Optional(
+            CONF_CONDITION,
+            default=default_condition,
+        ): selector.ConditionSelector(),
     }
+
     if with_title:
         return vol.Schema({**schema_title, **schema_options})
+
     return vol.Schema(schema_options)
 
 
@@ -51,11 +62,14 @@ class LightTimeoutConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
-            timeout = int(
-                cv.time_period_dict(
-                    user_input.get(CONF_TIMEOUT, None)
-                ).total_seconds()
-            ) or 0
+            timeout = (
+                int(
+                    cv.time_period_dict(
+                        user_input.get(CONF_TIMEOUT, None)
+                    ).total_seconds()
+                )
+                or 0
+            )
 
             if not timeout:
                 errors["base"] = "timeout_required"
@@ -66,6 +80,7 @@ class LightTimeoutConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     options={
                         CONF_LIGHTS: user_input[CONF_LIGHTS],
                         CONF_TIMEOUT: timeout,
+                        CONF_CONDITION: user_input[CONF_CONDITION],
                     },
                 )
 
@@ -78,35 +93,37 @@ class LightTimeoutConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return LightTimeoutOptionsFlowHandler(config_entry)
+        return LightTimeoutOptionsFlowHandler()
 
 
 class LightTimeoutOptionsFlowHandler(config_entries.OptionsFlow):
     """Options flow to edit lights and timeout."""
 
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input=None):
         errors = {}
 
         if user_input is not None:
-            timeout = int(
-                cv.time_period_dict(
-                    user_input.get(CONF_TIMEOUT, None)
-                ).total_seconds()
-            ) or 0
+            timeout = (
+                int(
+                    cv.time_period_dict(
+                        user_input.get(CONF_TIMEOUT, None)
+                    ).total_seconds()
+                )
+                or 0
+            )
 
             return self.async_create_entry(
                 title=self.config_entry.title,
                 data={
                     CONF_LIGHTS: user_input[CONF_LIGHTS],
                     CONF_TIMEOUT: timeout,
+                    CONF_CONDITION: user_input[CONF_CONDITION],
                 },
             )
 
         current_lights = self.config_entry.options.get(CONF_LIGHTS)
         current_timeout_secs = self.config_entry.options.get(CONF_TIMEOUT)
+        current_condition = self.config_entry.options.get(CONF_CONDITION)
         current_timeout_td = datetime.timedelta(seconds=current_timeout_secs)
         current_timeout_dict = _timedelta_to_dict(current_timeout_td)
 
@@ -115,6 +132,7 @@ class LightTimeoutOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=_get_schema(
                 default_lights=current_lights,
                 default_timeout=current_timeout_dict,
+                default_condition=current_condition,
                 with_title=False,
             ),
             errors=errors,

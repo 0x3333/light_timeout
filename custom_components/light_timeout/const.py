@@ -4,3 +4,4 @@ DOMAIN = "light_timeout"
 
 CONF_LIGHTS = "lights"
 CONF_TIMEOUT = "timeout"
+CONF_CONDITION = "condition"
