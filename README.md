@@ -14,6 +14,8 @@ A Home Assistant custom component that automatically turns off configured lights
 - Supports multiple lights simultaneously, each with its own timeout
 - Allow creating condition(s) to be evaluated before defining the timer allowing to create a conditional timeout
 
+![Configuration](.github/screenshot-configuration.png)
+
 ## Installation
 
 ### HACS (Recommended)
