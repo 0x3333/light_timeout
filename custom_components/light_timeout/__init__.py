@@ -1,11 +1,13 @@
 import logging
+from datetime import datetime, timedelta, timezone
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import STATE_ON
-from homeassistant.helpers.event import async_track_state_change_event, async_call_later
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.event import async_call_later, async_track_state_change_event
+from homeassistant.helpers.template import Template
 
-from .const import DOMAIN, CONF_LIGHTS, CONF_TIMEOUT
+from .const import CONF_ENABLE_TEMPLATE, CONF_EXPIRY, CONF_LIGHTS, CONF_TIMEOUT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,13 +27,50 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """
     Called when the user creates/activates a config entry via the UI (config_flow).
     """
+
+    def remove_expiry_map_entry(entity_id: str):
+        entry_data["expiry_map"].pop(entity_id, None)
+
+    def update_expiry_map_entry(entity_id: str, expiry_iso: str):
+        entry_data["expiry_map"][entity_id] = expiry_iso
+
+    def save_expiry_map():
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_EXPIRY: entry_data["expiry_map"]}
+        )
+
+    async def on_timeout(entity_id: str):
+        _LOGGER.debug("Timeout expired for %s; turning off...", entity_id)
+        await hass.services.async_call(
+            "light", "turn_off", {"entity_id": entity_id}, blocking=True
+        )
+        entry_data["timers"].pop(entity_id, None)
+        remove_expiry_map_entry(entity_id)
+        save_expiry_map()
+
     lights = entry.options.get(CONF_LIGHTS)
 
-    entry_data = {
+    entry_data = hass.data[DOMAIN][entry.entry_id] = {
         "unsubs": {},
         "timers": {},
+        "expiry_map": entry.data.get(CONF_EXPIRY, {}).copy(),
     }
-    hass.data[DOMAIN][entry.entry_id] = entry_data
+
+    now = datetime.now(timezone.utc)
+    for entity_id, expiry_iso in entry_data["expiry_map"].items():
+        try:
+            expiry = datetime.fromisoformat(expiry_iso)
+            # We always create a timer, even if it is expired to ensure the state is consistent
+            delay = max((expiry - now).total_seconds(), 1)
+            entry_data["timers"][entity_id] = async_call_later(
+                hass, delay, lambda _: hass.create_task(on_timeout(entity_id))
+            )
+            _LOGGER.debug(
+                "Restoring Timer scheduled for %s in %s seconds", entity_id, delay
+            )
+        except Exception:
+            remove_expiry_map_entry(entity_id)
+    save_expiry_map()
 
     # Register update listener to reload entry when options change
     entry_data["reload_unsub"] = entry.add_update_listener(_update_listener)
@@ -42,15 +81,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             handle = entry_data["timers"].pop(entity_id)
             handle()
 
-        async def _on_timeout(now):
-            _LOGGER.debug("Timeout expired for %s; turning off...", entity_id)
-            await hass.services.async_call(
-                "light", "turn_off", {"entity_id": entity_id}, blocking=True
-            )
-            entry_data["timers"].pop(entity_id, None)
-
         timeout_seconds = entry.options.get(CONF_TIMEOUT)
-        handle = async_call_later(hass, timeout_seconds, _on_timeout)
+        expiry = datetime.now(timezone.utc) + timedelta(seconds=timeout_seconds)
+        update_expiry_map_entry(entity_id, expiry.isoformat())
+        save_expiry_map()
+
+        handle = async_call_later(
+            hass, timeout_seconds, lambda _: hass.create_task(on_timeout(entity_id))
+        )
         entry_data["timers"][entity_id] = handle
         _LOGGER.debug(
             "Timer scheduled for %s in %s seconds", entity_id, timeout_seconds
@@ -61,10 +99,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         if entity_id in entry_data["timers"]:
             handle = entry_data["timers"].pop(entity_id)
             handle()
+            remove_expiry_map_entry(entity_id)
+            save_expiry_map()
+
             _LOGGER.debug("Timer canceled for %s", entity_id)
 
     @callback
-    async def _state_change_handler(event) -> None:
+    def _state_change_handler(event) -> None:
         """
         Handle state change events for lights:
         - If new state is ON: schedule/renew timeout.
@@ -77,6 +118,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             return
 
         if new_state.state == STATE_ON:
+            if template := entry.options.get(CONF_ENABLE_TEMPLATE):
+                rendered_template = Template(template, hass).async_render()
+                if str(rendered_template).strip().lower() not in ("1", "true", "yes", "on"):
+                    _LOGGER.warning(
+                        "Light %s turned ON, but condition not met", entity_id
+                    )
+                    return
+
             _LOGGER.debug("Light %s turned ON → scheduling timeout", entity_id)
             _schedule_timeout(entity_id)
         else:
