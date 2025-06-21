@@ -1,6 +1,6 @@
 # Light Timeout
 
-A Home Assistant custom component that automatically turns off configured lights after a user-defined timeout. When a light is turned on, a timer starts; if the timeout expires, the light is switched off. The timer is cancelled if the light is manually turned off or renewed if the light’s state is modified (e.g., brightness change). Each light has its own independent timer.
+A Home Assistant custom integration that automatically turns off configured lights after a user-defined timeout—optionally gated by custom Jinja2 template conditions. When a light is turned on and the user-specified condition evaluates to `true`, a timer starts; when the timer expires the light is switched off. The timer is cancelled if the light is manually turned off or renewed if the light’s state is modified (e.g., brightness change). Each light has its own independent timer.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/0x3333/light_timeout)
 [![GitHub Release](https://img.shields.io/github/release/0x3333/light_timeout.svg)](https://github.com/0x3333/light_timeout/releases)
@@ -12,6 +12,7 @@ A Home Assistant custom component that automatically turns off configured lights
 - Cancels the timer if the light is manually turned off
 - Renews the timer if the light’s state is modified while on
 - Supports multiple lights simultaneously, each with its own timeout
+- **Condition via Template**: define any Jinja2 template that must evaluate to `true` to enable/disable the timeout
 
 ![Configuration](.github/screenshot-configuration.png)
 
@@ -43,7 +44,8 @@ After installation and restart:
 3. Fill out the form:
    - **Name**: a friendly title for this instance (e.g., “Living Room Timeout”).
    - **Lights**: select one or more `light.xxx` entities to monitor.
-   - **Timeout**: choose a duration in “HH:MM:SS” format (e.g., “00:10:00” for 10 minutes).
+   - **Timeout**: choose a duration in `HH:MM:SS` format (e.g., `00:10:00` for 10 minutes).
+   - **Condition Template** *(optional)*: enter a Jinja2 template that will be evaluated after the light is turned `on`. The timer will only be started if the template renders `true`.
 4. Click **Submit**.
 
 The integration will begin monitoring the selected lights. You can create as many instances (Config Entries) as you like, each with its own set of lights and timeout.
