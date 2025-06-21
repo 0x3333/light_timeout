@@ -1,22 +1,17 @@
-# config_flow.py
-
 import datetime
+import logging
+
 import voluptuous as vol
-
 from homeassistant import config_entries
-from homeassistant.core import callback
-from homeassistant.helpers import selector, config_validation as cv
 from homeassistant.const import CONF_NAME
+from homeassistant.core import callback
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import selector
 
-from .const import DOMAIN, CONF_CONDITION, CONF_LIGHTS, CONF_TIMEOUT
+from .const import CONF_CONDITION, CONF_LIGHTS, CONF_TIMEOUT, DOMAIN
+from .helper import convert_to_safejson, timedelta_to_dict
 
-
-def _timedelta_to_dict(td: datetime.timedelta) -> dict:
-    """Convert a timedelta into a dict compatible with DurationSelector."""
-    total = int(td.total_seconds())
-    hours, rem = divmod(total, 3600)
-    minutes, seconds = divmod(rem, 60)
-    return {"hours": hours, "minutes": minutes, "seconds": seconds}
+_LOGGER = logging.getLogger(__name__)
 
 
 def _get_schema(
@@ -71,6 +66,10 @@ class LightTimeoutConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 or 0
             )
 
+            condition = convert_to_safejson(user_input[CONF_CONDITION])
+            logging.error("Original Condition: %s", user_input[CONF_CONDITION])
+            logging.error("JSONSafe Condition: %s", condition)
+
             if not timeout:
                 errors["base"] = "timeout_required"
             else:
@@ -80,7 +79,7 @@ class LightTimeoutConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     options={
                         CONF_LIGHTS: user_input[CONF_LIGHTS],
                         CONF_TIMEOUT: timeout,
-                        CONF_CONDITION: user_input[CONF_CONDITION],
+                        CONF_CONDITION: condition,
                     },
                 )
 
@@ -112,20 +111,27 @@ class LightTimeoutOptionsFlowHandler(config_entries.OptionsFlow):
                 or 0
             )
 
+            condition = convert_to_safejson(user_input[CONF_CONDITION])
+            logging.error("Original Condition: %s", user_input[CONF_CONDITION])
+            logging.error("JSONSafe Condition: %s", condition)
+
             return self.async_create_entry(
                 title=self.config_entry.title,
                 data={
                     CONF_LIGHTS: user_input[CONF_LIGHTS],
                     CONF_TIMEOUT: timeout,
-                    CONF_CONDITION: user_input[CONF_CONDITION],
+                    CONF_CONDITION: condition,
                 },
             )
 
         current_lights = self.config_entry.options.get(CONF_LIGHTS)
-        current_timeout_secs = self.config_entry.options.get(CONF_TIMEOUT)
-        current_condition = self.config_entry.options.get(CONF_CONDITION)
-        current_timeout_td = datetime.timedelta(seconds=current_timeout_secs)
-        current_timeout_dict = _timedelta_to_dict(current_timeout_td)
+        current_timeout_td = datetime.timedelta(
+            seconds=self.config_entry.options.get(CONF_TIMEOUT)
+        )
+        current_timeout_dict = timedelta_to_dict(current_timeout_td)
+        current_condition = convert_to_safejson(
+            self.config_entry.options.get(CONF_CONDITION)
+        )
 
         return self.async_show_form(
             step_id="init",
