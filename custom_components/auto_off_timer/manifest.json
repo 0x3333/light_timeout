@@ -1,0 +1,15 @@
+{
+  "domain": "auto_off_timer",
+  "name": "Auto Off Timer",
+  "version": "1.0.0",
+  "documentation": "https://github.com/0x3333/auto_off_timer",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@0x3333"],
+  "config_flow": true,
+  "iot_class": "local_push",
+  "hacs": {
+    "name": "Auto Off Timer",
+    "category": "integration"
+  }
+}
