@@ -1,6 +1,6 @@
 # Auto Off Timer
 
-A Home Assistant custom integration that automatically turns off configured entities after a user-defined timeout—optionally gated by custom Jinja2 template conditions. When an entities is turned on and the user-specified condition evaluates to `true`, a timer starts; when the timer expires the entities is switched off. The timer is cancelled if the entities is manually turned off or renewed if some attribute is modified (e.g., brightness change). Each entities has its own independent timer.
+A Home Assistant custom integration that automatically turns off configured entities after a user-defined timeout—optionally gated by custom Jinja2 template conditions. When an entities is turned on and the user-specified condition evaluates to `true`, a timer starts; when the timer expires the entities is switched off. The timer is cancelled if the entities is manually turned off or renewed if some attribute is modified (e.g., brightness change). Each entities has its own independent timer. *Timers are persisted, if Home Assistant is restarted, the timers will be restored*.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/0x3333/auto_off_timer)
 [![GitHub Release](https://img.shields.io/github/release/0x3333/auto_off_timer.svg)](https://github.com/0x3333/auto_off_timer/releases)
