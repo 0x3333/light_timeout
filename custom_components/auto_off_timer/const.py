@@ -4,7 +4,7 @@ DOMAIN = "auto_off_timer"
 
 # Storage
 STORAGE_VERSION = 1
-STORAGE_KEY_TEMPLATE = f"{DOMAIN}_{{entry_id}}"
+STORAGE_KEY_TEMPLATE = f"{DOMAIN}.{{entry_id}}"
 
 # Options
 CONF_ENTITIES = "entities"
