@@ -54,6 +54,7 @@ def _process_user_input(hass, user_input: dict) -> tuple[list[str], int, str, di
     """Process and validate user input."""
     errors = {}
     invalid = []
+    placeholders = {}
 
     entities = user_input[CONF_ENTITIES]
     for entity in entities:
@@ -71,13 +72,12 @@ def _process_user_input(hass, user_input: dict) -> tuple[list[str], int, str, di
     if not entities or len(entities) == 0:
         errors[CONF_ENTITIES] = "entities_required"
     elif invalid:
-        errors[CONF_ENTITIES] = (
-            f"These entities don't support turn_off: {', '.join(invalid)}"
-        )
+        errors[CONF_ENTITIES] = "invalid_entities"
+        placeholders["entities_list"] = ", ".join(invalid)
     elif not timeout:
         errors[CONF_TIMEOUT] = "timeout_required"
 
-    return entities, timeout, template, errors
+    return entities, timeout, template, errors, placeholders
 
 
 class AutoOffTimerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -88,13 +88,14 @@ class AutoOffTimerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         errors = {}
+        placeholders = {}
 
         default_entities = None
         default_timeout = None
         default_template = None
 
         if user_input is not None:
-            entities, timeout, template, errors = _process_user_input(
+            entities, timeout, template, errors, placeholders = _process_user_input(
                 self.hass, user_input
             )
             if not errors:
@@ -120,6 +121,7 @@ class AutoOffTimerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 default_template=default_template,
             ),
             errors=errors,
+            description_placeholders=placeholders,
         )
 
     @staticmethod
@@ -135,9 +137,10 @@ class AutoOffTimerOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Manage the options."""
         errors = {}
+        placeholders = {}
 
         if user_input is not None:
-            entities, timeout, template, errors = _process_user_input(
+            entities, timeout, template, errors, placeholders = _process_user_input(
                 self.hass, user_input
             )
             if not errors:
@@ -168,4 +171,5 @@ class AutoOffTimerOptionsFlowHandler(config_entries.OptionsFlow):
                 default_template=default_template,
             ),
             errors=errors,
+            description_placeholders=placeholders,
         )

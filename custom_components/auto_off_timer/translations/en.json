@@ -1,0 +1,54 @@
+{
+  "config": {
+    "title": "Auto Off Timer",
+    "step": {
+      "user": {
+        "title": "Setup Auto Off Timer",
+        "description": "Configure entities to automatically turn off after a specified timeout when they turn on.",
+        "data": {
+          "name": "Name",
+          "entities": "Entities",
+          "timeout": "Timeout Duration",
+          "enable_template": "Enable Condition (Template)"
+        },
+        "data_description": {
+          "name": "Name for this Auto Off Timer configuration",
+          "entities": "Select entities that should automatically turn off after the timeout",
+          "timeout": "How long to wait before turning off the entities",
+          "enable_template": "Optional template condition that must be true for the timer to activate"
+        }
+      }
+    },
+    "error": {
+      "entities_required": "At least one entity must be selected",
+      "timeout_required": "Timeout duration must be greater than 0",
+      "invalid_entities": "These entities don't support the turn_off service: {entities_list}"
+    },
+    "abort": {
+      "already_configured": "This Auto Off Timer configuration already exists"
+    }
+  },
+"options": {
+    "step": {
+      "init": {
+        "title": "Configure Auto Off Timer",
+        "description": "Update the entities and timeout settings for this Auto Off Timer.",
+        "data": {
+          "entities": "%key:config.step.user.data.entities%",
+          "timeout": "%key:config.step.user.data.timeout%",
+          "enable_template": "%key:config.step.user.data.enable_template%"
+        },
+        "data_description": {
+          "entities": "%key:config.step.user.data_description.entities%",
+          "timeout": "%key:config.step.user.data_description.timeout%",
+          "enable_template": "%key:config.step.user.data_description.enable_template%"
+        }
+      }
+    },
+    "error": {
+      "entities_required": "%key:config.error.entities_required%",
+      "timeout_required": "%key:config.error.timeout_required%",
+      "invalid_entities_template": "%key:config.error.invalid_entities_template%"
+    }
+  }
+}

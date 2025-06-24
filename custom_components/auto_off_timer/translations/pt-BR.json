@@ -1,0 +1,54 @@
+{
+  "config": {
+    "title": "Timer de Desligamento Automático",
+    "step": {
+      "user": {
+        "title": "Configurar Timer de Desligamento Automático",
+        "description": "Configure entidades para desligar automaticamente após um tempo especificado quando elas ligarem.",
+        "data": {
+          "name": "Nome",
+          "entities": "Entidades",
+          "timeout": "Duração do Timeout",
+          "enable_template": "Condição de Ativação (Template)"
+        },
+        "data_description": {
+          "name": "Nome para esta configuração do Timer de Desligamento Automático",
+          "entities": "Selecione as entidades que devem desligar automaticamente após o timeout",
+          "timeout": "Quanto tempo aguardar antes de desligar as entidades",
+          "enable_template": "Template de condição opcional que deve ser verdadeiro para o timer ativar"
+        }
+      }
+    },
+    "error": {
+      "entities_required": "Pelo menos uma entidade deve ser selecionada",
+      "timeout_required": "A duração do timeout deve ser maior que 0",
+      "invalid_entities": "Essas entidades não suportam o serviço turn_off: {entities_list}"
+    },
+    "abort": {
+      "already_configured": "Esta configuração do Timer de Desligamento Automático já existe"
+    }
+  },
+"options": {
+    "step": {
+      "init": {
+        "title": "Configurar Timer de Desligamento Automático",
+        "description": "Atualize as entidades e configurações de timeout para este Timer de Desligamento Automático.",
+        "data": {
+          "entities": "%key:config.step.user.data.entities%",
+          "timeout": "%key:config.step.user.data.timeout%",
+          "enable_template": "%key:config.step.user.data.enable_template%"
+        },
+        "data_description": {
+          "entities": "%key:config.step.user.data_description.entities%",
+          "timeout": "%key:config.step.user.data_description.timeout%",
+          "enable_template": "%key:config.step.user.data_description.enable_template%"
+        }
+      }
+    },
+    "error": {
+      "entities_required": "%key:config.error.entities_required%",
+      "timeout_required": "%key:config.error.timeout_required%",
+      "invalid_entities_template": "%key:config.error.invalid_entities_template%"
+    }
+  }
+}
