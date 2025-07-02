@@ -34,21 +34,21 @@
         "title": "Automatischen Ausschalt-Timer konfigurieren",
         "description": "Aktualisiere die Entitäten und Timeout-Einstellungen für diesen automatischen Ausschalt-Timer.",
         "data": {
-          "entities": "%key:config.step.user.data.entities%",
-          "timeout": "%key:config.step.user.data.timeout%",
-          "enable_template": "%key:config.step.user.data.enable_template%"
+          "entities": "Mindestens eine Entität muss ausgewählt werden",
+          "timeout": "Die Timeout-Dauer muss größer als 0 sein",
+          "enable_template": "Optionale Template-Bedingung, die erfüllt sein muss, damit der Timer aktiviert wird"
         },
         "data_description": {
-          "entities": "%key:config.step.user.data_description.entities%",
-          "timeout": "%key:config.step.user.data_description.timeout%",
-          "enable_template": "%key:config.step.user.data_description.enable_template%"
+          "entities": "Mindestens eine Entität muss ausgewählt werden",
+          "timeout": "Die Timeout-Dauer muss größer als 0 sein",
+          "enable_template": "Optionale Template-Bedingung, die erfüllt sein muss, damit der Timer aktiviert wird"
         }
       }
     },
     "error": {
-      "entities_required": "%key:config.error.entities_required%",
-      "timeout_required": "%key:config.error.timeout_required%",
-      "invalid_entities_template": "%key:config.error.invalid_entities_template%"
+      "entities_required": "Mindestens eine Entität muss ausgewählt werden",
+      "timeout_required": "Die Timeout-Dauer muss größer als 0 sein",
+      "invalid_entities_template": "Diese Entitäten unterstützen den turn_off-Dienst nicht: {entities_list}"
     }
   }
 }
