@@ -1,0 +1,54 @@
+{
+  "config": {
+    "title": "Automatischer Ausschalt-Timer",
+    "step": {
+      "user": {
+        "title": "Automatischen Ausschalt-Timer einrichten",
+        "description": "Konfiguriere Entitäten so, dass sie sich nach einer angegebenen Zeit automatisch ausschalten, wenn sie eingeschaltet werden.",
+        "data": {
+          "name": "Name",
+          "entities": "Entitäten",
+          "timeout": "Timeout-Dauer",
+          "enable_template": "Aktivierungsbedingung (Template)"
+        },
+        "data_description": {
+          "name": "Name für diese Konfiguration des automatischen Ausschalt-Timers",
+          "entities": "Wähle Entitäten aus, die sich nach Ablauf des Zeitlimits automatisch ausschalten sollen",
+          "timeout": "Wie lange gewartet werden soll, bevor die Entitäten ausgeschaltet werden",
+          "enable_template": "Optionale Template-Bedingung, die erfüllt sein muss, damit der Timer aktiviert wird"
+        }
+      }
+    },
+    "error": {
+      "entities_required": "Mindestens eine Entität muss ausgewählt werden",
+      "timeout_required": "Die Timeout-Dauer muss größer als 0 sein",
+      "invalid_entities": "Diese Entitäten unterstützen den turn_off-Dienst nicht: {entities_list}"
+    },
+    "abort": {
+      "already_configured": "Diese Konfiguration des automatischen Ausschalt-Timers existiert bereits"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Automatischen Ausschalt-Timer konfigurieren",
+        "description": "Aktualisiere die Entitäten und Timeout-Einstellungen für diesen automatischen Ausschalt-Timer.",
+        "data": {
+          "entities": "%key:config.step.user.data.entities%",
+          "timeout": "%key:config.step.user.data.timeout%",
+          "enable_template": "%key:config.step.user.data.enable_template%"
+        },
+        "data_description": {
+          "entities": "%key:config.step.user.data_description.entities%",
+          "timeout": "%key:config.step.user.data_description.timeout%",
+          "enable_template": "%key:config.step.user.data_description.enable_template%"
+        }
+      }
+    },
+    "error": {
+      "entities_required": "%key:config.error.entities_required%",
+      "timeout_required": "%key:config.error.timeout_required%",
+      "invalid_entities_template": "%key:config.error.invalid_entities_template%"
+    }
+  }
+}
