@@ -4,6 +4,7 @@ from homeassistant.const import CONF_NAME, SERVICE_TURN_OFF
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import selector
+from homeassistant.helpers.selector import NumberSelectorConfig
 
 from .const import CONF_ENABLE_TEMPLATE, CONF_ENTITIES, CONF_TIMEOUT, DOMAIN
 
@@ -17,7 +18,8 @@ def _seconds_to_dict(seconds: int) -> dict:
 
 def _get_schema(
     default_entities=None,
-    default_timeout: dict = None,
+#    default_timeout: dict = None,
+    default_timeout: int = None,
     default_template: str = None,
     with_title: bool = True,
 ):
@@ -36,8 +38,15 @@ def _get_schema(
         vol.Required(CONF_ENTITIES, default=default_entities): selector.EntitySelector(
             selector.EntitySelectorConfig(multiple=True)
         ),
-        vol.Required(CONF_TIMEOUT, default=default_timeout): selector.DurationSelector(
-            selector.DurationSelectorConfig(enable_day=True)
+
+        vol.Required(CONF_TIMEOUT, default=default_timeout): selector.NumberSelector(
+            NumberSelectorConfig(
+                min=0,
+                max=1440,
+                step=1,
+                unit_of_measurement="min",
+                mode="box"  # reines Eingabefeld statt Slider
+            )
         ),
         vol.Optional(
             CONF_ENABLE_TEMPLATE, default=default_template
@@ -62,10 +71,9 @@ def _process_user_input(hass, user_input: dict) -> tuple[list[str], int, str, di
         if not hass.services.has_service(domain, SERVICE_TURN_OFF):
             invalid.append(entity)
 
-    timeout = (
-        int(cv.time_period_dict(user_input.get(CONF_TIMEOUT, None)).total_seconds())
-        or 0
-    )
+    # Eingabe als Minuten → in Sekunden umrechnen
+    minutes = user_input.get(CONF_TIMEOUT, 0) or 0
+    timeout = int(minutes) * 60
 
     template = user_input.get(CONF_ENABLE_TEMPLATE, "")
 
@@ -157,9 +165,10 @@ class AutoOffTimerOptionsFlowHandler(config_entries.OptionsFlow):
             default_template = user_input.get(CONF_ENABLE_TEMPLATE, "")
         else:
             default_entities = self.config_entry.options.get(CONF_ENTITIES, [])
-            default_timeout = _seconds_to_dict(
-                self.config_entry.options.get(CONF_TIMEOUT, 300)
-            )
+            # Sekunden → Minuten
+            stored_sec = self.config_entry.options.get(CONF_TIMEOUT, 300)
+            default_timeout = stored_sec // 60
+
             default_template = self.config_entry.options.get(CONF_ENABLE_TEMPLATE, "")
 
         return self.async_show_form(
